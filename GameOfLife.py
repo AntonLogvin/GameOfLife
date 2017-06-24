@@ -1,6 +1,8 @@
 import pygame, sys
 from pygame.locals import *
 import random
+import Configuration as config
+import json
 
 # Number of frames per second
 FPS = 10
@@ -17,6 +19,8 @@ assert WINDOWHEIGHT % CELLSIZE == 0, "Window height must be a multiple of cell s
 # Determine number of cells in horizonatl and vertical plane
 CELLWIDTH = int(WINDOWWIDTH / CELLSIZE)  # number of cells wide
 CELLHEIGHT = int(WINDOWHEIGHT / CELLSIZE)  # Number of cells high
+
+# CONFIGURATION = config.Configuration(48, 64, [(1, 2), (2, 3), (2, 2)])
 
 # set up the colours
 BLACK = (0, 0, 0)
@@ -46,6 +50,19 @@ def colourGrid(item, lifeDict):
     return None
 
 
+def readConfigurationFromFile():
+    configString = open('configuration.txt', 'r').read();
+    configuration = config.Configuration(configString)
+    return configuration;
+
+
+def writeConfigurationToFile():
+    file = open('configuration.txt', 'w');
+    con = config.Configuration(CELLWIDTH, CELLHEIGHT, [(5, 7), (2, 8), (8, 4)]);
+    conJson = con.toJSON();
+    file.write(conJson);
+
+
 # Creates an dictionary of all the cells
 # Sets all cells as dead (0)
 def blankGrid():
@@ -70,13 +87,26 @@ def getNeighbours(item, lifeDict):
     for x in range(-1, 2):
         for y in range(-1, 2):
             checkCell = (item[0] + x, item[1] + y)
-            if checkCell[0] < CELLWIDTH and checkCell[0] >= 0:
-                if checkCell[1] < CELLHEIGHT and checkCell[1] >= 0:
-                    if lifeDict[checkCell] == 1:
-                        if x == 0 and y == 0:  # negate the central cell
-                            neighbours += 0
-                        else:
-                            neighbours += 1
+            result_value = None;
+
+            if checkCell[0] == CELLWIDTH and 0 <= checkCell[1] < CELLHEIGHT:
+                result_value = lifeDict[0, checkCell[1]]
+
+            if checkCell[0] < 0 and 0 <= checkCell[1] < CELLHEIGHT:
+                result_value = lifeDict[CELLWIDTH - 1, checkCell[1]]
+            if checkCell[1] == CELLHEIGHT and 0 <= checkCell[0] < CELLWIDTH:
+                result_value = lifeDict[checkCell[0], 0]
+            if checkCell[1] < 0 and 0 <= checkCell[0] < CELLWIDTH:
+                result_value = lifeDict[checkCell[0], CELLHEIGHT - 1]
+
+            if result_value is None and checkCell[0] >= 0 and checkCell[1] >= 0 and checkCell[0] < CELLWIDTH and checkCell[1] < CELLHEIGHT:
+                result_value = lifeDict[checkCell]
+
+            if result_value == 1:
+                if x == 0 and y == 0:  # negate the central cell
+                    neighbours += 0
+                else:
+                    neighbours += 1
 
     return neighbours
 
@@ -113,7 +143,13 @@ def main():
     DISPLAYSURF.fill(WHITE)
 
     lifeDict = blankGrid()  # creates library and Populates to match blank grid
-    lifeDict = startingGridRandom(lifeDict)  # Assign random life
+    config = readConfigurationFromFile();
+
+    list = config.startCellsList;
+
+    for cell in list:
+        lifeDict[(cell[0], cell[1])] = 1
+    #lifeDict = startingGridRandom(lifeDict)  # Assign random life
 
     # Colours the live cells, blanks the dead
     for item in lifeDict:
