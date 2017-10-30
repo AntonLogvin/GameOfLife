@@ -28,7 +28,6 @@ WHITE = (255, 255, 255)
 DARKGRAY = (40, 40, 40)
 GREEN = (0, 255, 0)
 
-
 # Draws the grid lines
 def drawGrid():
     for x in range(0, WINDOWWIDTH, CELLSIZE):  # draw vertical lines
